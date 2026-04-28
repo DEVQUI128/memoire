@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Créer une note - Notes App{% endblock %}
+
+{% block content %}
+<div class="note-form-container">
+    <div class="note-form-card">
+        <h1>Créer une nouvelle note</h1>
+        <p class="form-subtitle">Composez votre note</p>
+
+        <!-- [VULN A05] Pas de vrai token CSRF -->
+        <form method="POST" class="form">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.title.label(class="form-label") }}
+                {% if form.title.errors %}
+                    {{ form.title(class="form-control form-control-error") }}
+                    <ul class="form-errors">
+                        {% for error in form.title.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ form.title(class="form-control form-control-lg", placeholder="Titre de votre note") }}
+                {% endif %}
+                <!-- [VULN A03] Aucune limite de longueur — payload XSS accepté -->
+            </div>
+
+            <div class="form-group">
+                {{ form.content.label(class="form-label") }}
+                {% if form.content.errors %}
+                    {{ form.content(class="form-control form-control-error form-textarea", rows="12") }}
+                    <ul class="form-errors">
+                        {% for error in form.content.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ form.content(class="form-control form-textarea", rows="12", placeholder="Écrivez votre note ici...") }}
+                {% endif %}
+            </div>
+
+            <div class="form-actions">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-lg">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

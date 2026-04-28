@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Erreur 500 - Notes App{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <div class="error-code">500</div>
+        <h1>Erreur serveur</h1>
+        <p class="error-message">Une erreur interne s'est produite.</p>
+        <!-- [VULN A09] Dans notes-secure ce message est générique et l'erreur n'est pas affichée -->
+        <p class="error-detail">Veuillez réessayer plus tard.</p>
+
+        <div class="error-actions">
+            <a href="{{ url_for('main.home') }}" class="btn btn-primary">
+                ← Retour à l'accueil
+            </a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                    → Tableau de bord
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

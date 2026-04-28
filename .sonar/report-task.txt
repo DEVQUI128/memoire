@@ -1,0 +1,6 @@
+projectKey=vuln_2
+serverUrl=http://localhost:9000
+serverVersion=26.4.0.121862
+dashboardUrl=http://localhost:9000/dashboard?id=vuln_2
+ceTaskId=c9c3341b-6025-4abd-bf53-550ff89105e6
+ceTaskUrl=http://localhost:9000/api/ce/task?id=c9c3341b-6025-4abd-bf53-550ff89105e6

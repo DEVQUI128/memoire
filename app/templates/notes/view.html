@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} - Notes App{% endblock %}
+
+{% block content %}
+<div class="note-view-container">
+    <div class="note-view-card">
+        <div class="note-view-header">
+            <!-- [VULN A03] Titre affiché sans échappement — XSS stocké -->
+            <!-- Dans notes-secure : {{ note.title }} sans | safe -->
+            <h1 class="note-view-title">{{ note.title | safe }}</h1>
+            <div class="note-view-meta">
+                <span class="meta-item">
+                    📅 Créée: {{ note.created_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                </span>
+                {% if note.updated_at != note.created_at %}
+                    <span class="meta-item">
+                        ✏️ Modifiée: {{ note.updated_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- [VULN A03] Contenu affiché sans échappement — XSS stocké -->
+        <!-- Un attaquant peut stocker <script>alert(document.cookie)</script> -->
+        <!-- Dans notes-secure : {{ note.content }} sans | safe -->
+        <div class="note-view-content">
+            {{ note.content | safe }}
+        </div>
+
+        <div class="note-view-actions">
+            <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn btn-secondary">
+                ✏️ Modifier
+            </a>
+            <!-- [VULN A05] Formulaire de suppression sans token CSRF -->
+            <form method="POST" action="{{ url_for('notes.delete_note', note_id=note.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette note?')">
+                    🗑️ Supprimer
+                </button>
+            </form>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                ← Retour au tableau de bord
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

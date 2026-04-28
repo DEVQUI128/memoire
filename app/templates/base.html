@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{% block title %}Notes App{% endblock %}</title>
+    <!-- [VULN A05] Aucun meta CSP, X-Frame-Options ou autre header de sécurité -->
+    <!-- Dans notes-secure : Flask-Talisman ajoute ces headers automatiquement -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <a href="{% if current_user.is_authenticated %}{{ url_for('main.dashboard') }}{% else %}{{ url_for('auth.login') }}{% endif %}" class="brand-link">
+                    {% if current_user.is_authenticated %}
+                        <span class="brand-avatar">{{ current_user.username[0]|upper }}</span>
+                    {% else %}
+                        <span class="brand-avatar-placeholder">📝</span>
+                        <span class="brand-text">Notes</span>
+                    {% endif %}
+                </a>
+            </div>
+
+            {% if current_user.is_authenticated %}
+            <div class="search-container">
+                <form method="GET" action="{{ url_for('main.search') }}" class="search-form">
+                    <input type="text" name="q" class="search-input" placeholder="Rechercher dans vos notes..." value="{{ search_query or '' }}">
+                    <button type="submit" class="search-button">🔍</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <ul class="navbar-menu">
+                {% if current_user.is_authenticated %}
+                    <li class="navbar-item">
+                        <span class="navbar-user">Bienvenue, {{ current_user.username }}!</span>
+                    </li>
+                    
+                    <li class="navbar-item">
+                        <a href="{{ url_for('notes.create_note') }}" class="navbar-link btn-primary">+ Nouvelle note</a>
+                    </li>
+                    <li class="navbar-item">
+                        <a href="{{ url_for('auth.logout') }}" class="navbar-link btn-danger">Déconnexion</a>
+                    </li>
+                {% else %}
+                    <li class="navbar-item">
+                        <a href="{{ url_for('auth.login') }}" class="navbar-link">Connexion</a>
+                    </li>
+                    <li class="navbar-item">
+                        <a href="{{ url_for('auth.register') }}" class="navbar-link btn-primary">Inscription</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <div class="alert-container">
+                        {{ message }}
+                        <button class="alert-close" onclick="this.parentElement.style.display='none';">&times;</button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+   
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

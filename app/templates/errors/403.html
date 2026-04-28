@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Erreur 403 - Notes App{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <div class="error-code">403</div>
+        <h1>Accès refusé</h1>
+        <p class="error-message">Vous n'avez pas la permission d'accéder à cette ressource.</p>
+
+        <div class="error-actions">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                ← Retour au tableau de bord
+            </a>
+            <a href="{{ url_for('main.home') }}" class="btn btn-secondary">
+                → Accueil
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

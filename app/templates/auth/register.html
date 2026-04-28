@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription - Notes App{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h1>Créer un compte</h1>
+        <p class="auth-subtitle">Rejoignez Notes App</p>
+
+        <!-- [VULN A05] Pas de vrai token CSRF -->
+        <form method="POST" class="form">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.username.label(class="form-label") }}
+                {% if form.username.errors %}
+                    {{ form.username(class="form-control form-control-error") }}
+                    <ul class="form-errors">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ form.username(class="form-control", placeholder="Nom d'utilisateur") }}
+                {% endif %}
+                <!-- [VULN A03] Aucune contrainte de format indiquée -->
+            </div>
+
+            <div class="form-group">
+                {{ form.email.label(class="form-label") }}
+                {% if form.email.errors %}
+                    {{ form.email(class="form-control form-control-error") }}
+                    <ul class="form-errors">
+                        {% for error in form.email.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ form.email(class="form-control", placeholder="votre@email.com", type="email") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label(class="form-label") }}
+                {% if form.password.errors %}
+                    {{ form.password(class="form-control form-control-error") }}
+                    <ul class="form-errors">
+                        {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    {{ form.password(class="form-control", placeholder="Mot de passe", type="password") }}
+                {% endif %}
+                <!-- [VULN A07] Aucune règle de complexité indiquée — tout mot de passe accepté -->
+            </div>
+
+            <!-- [VULN A07] Pas de champ de confirmation du mot de passe -->
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary btn-block") }}
+            </div>
+        </form>
+
+        <div class="auth-footer">
+            <p>Vous avez déjà un compte? <a href="{{ url_for('auth.login') }}" class="link">Se connecter</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
