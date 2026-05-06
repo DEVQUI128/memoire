@@ -67,3 +67,5 @@ tmp/
 .env
 .env.local
 secrets.json
+
+.sonarwork/
