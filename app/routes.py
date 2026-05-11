@@ -13,8 +13,8 @@ Vulnérabilités introduites :
   A10 - Open Redirect          : Paramètre next= non validé
 """
 
-import sqlite3
-import os
+from urllib.parse import urlparse, urljoin
+from sqlalchemy import text
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models import db, User, Note
@@ -28,6 +28,17 @@ from app.security import check_note_ownership, login_required_custom
 
 auth_bp = Blueprint('auth', __name__)
 
+def is_safe_url(target):
+    """
+    Vérifie que l'URL appartient au même domaine.
+    """
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+
+    return (
+        test_url.scheme in ('http', 'https')
+        and ref_url.netloc == test_url.netloc
+    )
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -47,22 +58,16 @@ def register():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-
-        # [VULN A03] Injection SQL — vérification d'unicité par requête brute concaténée
-        # Payload : ' OR '1'='1  => passe la vérification et crée un doublon
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            'instance', 'notes_vuln.db'
-        )
         existing = None
+
         try:
-            conn   = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            # Requête brute vulnérable
-            query  = "SELECT id FROM users WHERE username = '" + form.username.data + "'"
-            cursor.execute(query)
-            existing = cursor.fetchone()
-            conn.close()
+            existing = db.session.execute(
+                text("SELECT id FROM users WHERE username = :username"),
+                {
+                    "username": form.username.data
+                }
+            ).fetchone()
+
         except Exception:
             pass
 
@@ -111,38 +116,38 @@ def login():
 
     if form.validate_on_submit():
 
-        # [VULN A03] Injection SQL — authentification par requête brute concaténée
-        db_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            'instance', 'notes_vuln.db'
-        )
         user_row = None
+
         try:
-            conn   = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            # Requête brute vulnérable aux injections SQL
-            query = (
-                "SELECT id FROM users "
-                "WHERE username = '" + form.username.data +
-                "' AND password = '" + form.password.data + "'"
-            )
-            cursor.execute(query)
-            user_row = cursor.fetchone()
-            conn.close()
-        except Exception as e:
-            # [VULN A09] Erreur SQL exposée avec le message technique
-            flash(f'Erreur base de données : {str(e)}', 'danger')
+            user_row = db.session.execute(
+                text("""
+                    SELECT id FROM users
+                    WHERE username = :username
+                    AND password = :password
+                """),
+                {
+                    "username": form.username.data,
+                    "password": form.password.data
+                }
+            ).fetchone()
+
+        except Exception:
+            flash('Erreur interne.', 'danger')
             return render_template('auth/login.html', form=form)
 
         if user_row:
             user = User.query.get(user_row[0])
+
             login_user(user, remember=False)
 
-            # [VULN A10] Redirection ouverte — next= non validé
-            # Dans notes-secure : url_has_allowed_host_and_scheme() filtre les URL externes
-            next_page = request.args.get('next', url_for('main.dashboard'))
+            next_page = request.args.get('next')
+
+            # Validation anti Open Redirect
+            if not next_page or not is_safe_url(next_page):
+                next_page = url_for('main.dashboard')
 
             flash(f'Bienvenue {user.username}!', 'success')
+
             return redirect(next_page)
         else:
             # [VULN A07] Messages différents selon que l'username existe ou non

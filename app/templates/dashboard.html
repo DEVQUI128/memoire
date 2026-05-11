@@ -6,27 +6,34 @@
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1>Mes notes</h1>
+
         {% if search_query %}
-            <p class="search-info">Résultats de recherche pour: <strong>{{ search_query }}</strong> ({{ notes|length }} résultat{{ 's' if notes|length > 1 else '' }} trouvé{{ 's' if notes|length > 1 else '' }})</p>
+            <p class="search-info">
+                Résultats de recherche pour:
+                <strong>{{ search_query }}</strong>
+                ({{ notes|length }} résultat{{ 's' if notes|length > 1 else '' }}
+                trouvé{{ 's' if notes|length > 1 else '' }})
+            </p>
         {% endif %}
     </div>
 
-
     {% if notes %}
         <div class="notes-grid">
+
             {% for note in notes %}
                 <div class="note-card">
+
                     <div class="note-header">
                         <h3 class="note-title">
                             <a href="{{ url_for('notes.view_note', note_id=note.id) }}">
-                                <!-- [VULN A03] Titre affiché sans échappement — XSS stocké -->
+                                <!-- [VULN A03] XSS stocké -->
                                 {{ note.title | safe }}
                             </a>
                         </h3>
                     </div>
 
                     <p class="note-preview">
-                        <!-- [VULN A03] Contenu affiché sans échappement — XSS stocké -->
+                        <!-- [VULN A03] XSS stocké -->
                         {% if note.content|length > 100 %}
                             {{ note.content[:100] | safe }}...
                         {% else %}
@@ -35,42 +42,77 @@
                     </p>
 
                     <div class="note-meta">
+
                         <span class="note-date">
                             📅 {{ note.created_at.strftime('%d/%m/%Y %H:%M') }}
                         </span>
+
                         {% if note.updated_at != note.created_at %}
                             <span class="note-updated">
-                                ✏️ Modifiée: {{ note.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                ✏️ Modifiée:
+                                {{ note.updated_at.strftime('%d/%m/%Y %H:%M') }}
                             </span>
                         {% endif %}
+
                     </div>
 
                     <div class="note-actions">
-                        <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="btn btn-small btn-info">
+
+                        <a href="{{ url_for('notes.view_note', note_id=note.id) }}"
+                           class="btn btn-small btn-info">
                             Voir
                         </a>
-                        <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn btn-small btn-secondary">
+
+                        <a href="{{ url_for('notes.edit_note', note_id=note.id) }}"
+                           class="btn btn-small btn-secondary">
                             Modifier
                         </a>
-                        <!-- [VULN A05] Formulaire de suppression sans token CSRF -->
-                        <form method="POST" action="{{ url_for('notes.delete_note', note_id=note.id) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Êtes-vous sûr?')">
+
+                        <!-- Protection CSRF -->
+                        <form method="POST"
+                              action="{{ url_for('notes.delete_note', note_id=note.id) }}"
+                              style="display:inline;">
+
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   value="{{ csrf_token() }}">
+
+                            <button type="submit"
+                                    class="btn btn-small btn-danger"
+                                    onclick="return confirm('Êtes-vous sûr?')">
+
                                 Supprimer
                             </button>
+
                         </form>
+
                     </div>
+
                 </div>
             {% endfor %}
+
         </div>
+
     {% else %}
+
         <div class="empty-state">
+
             <div class="empty-state-icon">📝</div>
+
             <h2>Aucune note pour le moment</h2>
-            <p>Commencez à prendre des notes en cliquant sur le bouton ci-dessus</p>
-            <a href="{{ url_for('notes.create_note') }}" class="btn btn-primary">
+
+            <p>
+                Commencez à prendre des notes en cliquant sur le bouton ci-dessus
+            </p>
+
+            <a href="{{ url_for('notes.create_note') }}"
+               class="btn btn-primary">
+
                 Créer ma première note
             </a>
+
         </div>
+
     {% endif %}
 </div>
 {% endblock %}

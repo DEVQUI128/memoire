@@ -17,11 +17,10 @@ def make_shell_context():
 
 
 if __name__ == '__main__':
-    # [VULN A05] host='0.0.0.0' expose l'app sur toutes les interfaces réseau
-    # Dans notes-secure : host='127.0.0.1' (localhost uniquement)
+    
     app.run(
-        host='0.0.0.0',
+        host='127.0.0.1',
         port=5001,
-        debug=True,
-        use_reloader=True
+        debug=False,
+        use_reloader=False
     )
