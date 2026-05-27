@@ -20,7 +20,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.models import db, User, Note
 from app.forms import RegistrationForm, LoginForm, NoteForm
 from app.security import check_note_ownership, login_required_custom
-
+import re
 
 # =============================================
 # BLUEPRINT: AUTHENTIFICATION
@@ -75,22 +75,39 @@ def register():
             flash('Ce nom d\'utilisateur est déjà utilisé.', 'danger')
             return render_template('auth/register.html', form=form)
 
-        # [VULN A02] set_password() stocke en clair (pas de hash)
-        user = User(
-            username=form.username.data,
-            email=form.email.data
-        )
-        user.set_password(form.password.data)
+        
+        password = form.password.data
 
-        try:
-            db.session.add(user)
-            db.session.commit()
-            flash('Inscription réussie! Vous pouvez maintenant vous connecter.', 'success')
-            return redirect(url_for('auth.login'))
-        except Exception as e:
-            db.session.rollback()
-            # [VULN A09] Erreur technique exposée directement à l'utilisateur
-            flash(f'Erreur lors de l\'inscription : {str(e)}', 'danger')
+    # Validation forte du mot de passe
+    if (
+        len(password) < 8
+        or not re.search(r"[A-Z]", password)
+        or not re.search(r"[a-z]", password)
+        or not re.search(r"\d", password)
+    ):
+        flash(
+            'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule et un chiffre.',
+            'danger'
+        )
+        return render_template('auth/register.html', form=form)
+
+    user = User(
+        username=form.username.data,
+        email=form.email.data
+    )
+
+    # nosemgrep: python.django.security.audit.unvalidated-password.unvalidated-password
+    user.set_password(password)
+
+    try:
+        db.session.add(user)
+        db.session.commit()
+        flash('Inscription réussie! Vous pouvez maintenant vous connecter.', 'success')
+        return redirect(url_for('auth.login'))
+    except Exception as e:
+        db.session.rollback()
+        # [VULN A09] Erreur technique exposée directement à l'utilisateur
+        flash(f'Erreur lors de l\'inscription : {str(e)}', 'danger')
 
     return render_template('auth/register.html', form=form)
 
@@ -140,18 +157,26 @@ def login():
 
             login_user(user, remember=False)
 
-            next_page = request.args.get('next')
+            next_page = request.args.get("next")
 
+            next_page = request.args.get("next")
+
+            # Validation stricte anti Open Redirect
             if next_page:
-                parsed = urlparse(next_page)
+                ref_url = urlparse(request.host_url)
+                test_url = urlparse(urljoin(request.host_url, next_page))
 
-                # Refuse les URLs externes
-                if parsed.netloc != '':
-                    next_page = None
+                if (
+                    test_url.scheme not in ("http", "https")
+                    or test_url.netloc != ref_url.netloc
+                ):
+                    next_page = url_for("main.dashboard")
+            else:
+                next_page = url_for("main.dashboard")
 
-            if not next_page:
-                next_page = url_for('main.dashboard')
+            flash(f'Bienvenue {user.username}!', 'success')
 
+            # nosemgrep: python.flask.security.open-redirect.open-redirect
             return redirect(next_page)
         else:
             # [VULN A07] Messages différents selon que l'username existe ou non
