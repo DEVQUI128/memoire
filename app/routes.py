@@ -142,11 +142,15 @@ def login():
 
             next_page = request.args.get('next')
 
-            # Validation anti Open Redirect
-            if not next_page or not is_safe_url(next_page):
-                next_page = url_for('main.dashboard')
+            if next_page:
+                parsed = urlparse(next_page)
 
-            flash(f'Bienvenue {user.username}!', 'success')
+                # Refuse les URLs externes
+                if parsed.netloc != '':
+                    next_page = None
+
+            if not next_page:
+                next_page = url_for('main.dashboard')
 
             return redirect(next_page)
         else:

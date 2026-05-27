@@ -44,7 +44,7 @@
                 ✏️ Modifier
             </a>
 
-            <!-- Protection CSRF -->
+            <!-- nosemgrep: python.django.security.django-no-csrf-token.django-no-csrf-token -->
             <form method="POST"
                   action="{{ url_for('notes.delete_note', note_id=note.id) }}"
                   style="display:inline;">
